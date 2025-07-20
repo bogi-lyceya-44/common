@@ -12,6 +12,10 @@ func New[T comparable](needles ...T) Set[T] {
 	return result
 }
 
+func NewEmptyWithCapacity[T comparable](capacity int) Set[T] {
+	return make(Set[T], capacity)
+}
+
 func (s Set[T]) Add(needles ...T) {
 	for _, x := range needles {
 		s[x] = struct{}{}
@@ -38,14 +42,12 @@ func (s Set[T]) Slice() []T {
 }
 
 func (s Set[T]) Equal(another Set[T]) bool {
-	for x := range s {
-		if !another.Contains(x) {
-			return false
-		}
+	if s.Len() != another.Len() {
+		return false
 	}
 
-	for x := range another {
-		if !s.Contains(x) {
+	for x := range s {
+		if !another.Contains(x) {
 			return false
 		}
 	}

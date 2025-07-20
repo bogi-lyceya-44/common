@@ -104,7 +104,7 @@ func Batch[T any](arr []T, batchSize int) [][]T {
 
 // Flatten flattens two-dimensional array into one-dimensional.
 //
-// Example: [[1, 2, 3], [4, 5], [6]] -> [1, 2, 3, 4, 5, 6]
+// Example: Flatten([[1, 2, 3], [4, 5], [6]]) -> [1, 2, 3, 4, 5, 6]
 func Flatten[T any](arr [][]T) []T {
 	totalLength := 0
 
@@ -116,6 +116,87 @@ func Flatten[T any](arr [][]T) []T {
 
 	for _, x := range arr {
 		result = append(result, x...)
+	}
+
+	return result
+}
+
+// Unique removes duplicates from the provided array.
+//
+// Example: Unique([1, 2, 3, 3, 2, 1]) -> [1, 2, 3]
+func Unique[T comparable](arr []T) []T {
+	result := make([]T, 0, len(arr))
+	exist := make(map[T]struct{}, len(arr))
+
+	for _, x := range arr {
+		if _, ok := exist[x]; ok {
+			continue
+		}
+
+		exist[x] = struct{}{}
+		result = append(result, x)
+	}
+
+	return result
+}
+
+// Keys returns a slice of keys retrieved from provided map.
+//
+// Example: Keys(map[1:1, 2:2, 3:4]) -> [1, 2, 3]
+func Keys[T comparable, U any](items map[T]U) []T {
+	result := make([]T, 0, len(items))
+
+	for k := range items {
+		result = append(result, k)
+	}
+
+	return result
+}
+
+// Values returns a slice of values retrieved from provided map.
+//
+// Example: Values(map[1:1, 2:2, 3:4]) -> [1, 2, 4]
+func Values[T comparable, U any](items map[T]U) []U {
+	result := make([]U, 0, len(items))
+
+	for _, v := range items {
+		result = append(result, v)
+	}
+
+	return result
+}
+
+// Zip "zips" two slices into one slice of pairs,
+// where one pair has elements from slices under the same index.
+// Extra elements will be discarded.
+//
+// Example: Zip([1, 2, 3, 4], [5, 6]) -> [{1, 5}, {2, 6}]
+func Zip[T, U any](l []T, r []U) []struct {
+	First  T
+	Second U
+} {
+	totalLength := min(len(l), len(r))
+
+	result := make(
+		[]struct {
+			First  T
+			Second U
+		},
+		0,
+		totalLength,
+	)
+
+	for i := range totalLength {
+		result = append(
+			result,
+			struct {
+				First  T
+				Second U
+			}{
+				First:  l[i],
+				Second: r[i],
+			},
+		)
 	}
 
 	return result
