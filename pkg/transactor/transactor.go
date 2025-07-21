@@ -70,18 +70,22 @@ func (i impl) WithTx(ctx context.Context, fn func(context.Context) error) error 
 }
 
 func (i impl) WithTxOpts(ctx context.Context, fn func(context.Context) error, opts pgx.TxOptions) (txErr error) {
-	ctxWithTx, err, tx := injectTx(ctx, i.db, opts)
+	ctxWithTx, tx, err := injectTx(ctx, i.db, opts)
 	if err != nil {
 		return fmt.Errorf("inject tx: %w", err)
 	}
 
 	defer func() {
 		if txErr != nil {
-			tx.Rollback(ctxWithTx)
+			if rbErr := tx.Rollback(ctxWithTx); rbErr != nil {
+				txErr = fmt.Errorf("tx rollback failed: %v; original error: %w", rbErr, txErr)
+			}
 			return
 		}
 
-		tx.Commit(ctxWithTx)
+		if cmErr := tx.Commit(ctxWithTx); cmErr != nil {
+			txErr = fmt.Errorf("tx commit failed: %w", cmErr)
+		}
 	}()
 
 	err = fn(ctxWithTx)
@@ -109,15 +113,15 @@ func ExtractTx(ctx context.Context) (pgx.Tx, error) {
 	return tx, nil
 }
 
-func injectTx(ctx context.Context, db *pgxpool.Pool, opts pgx.TxOptions) (context.Context, error, pgx.Tx) {
+func injectTx(ctx context.Context, db *pgxpool.Pool, opts pgx.TxOptions) (context.Context, pgx.Tx, error) {
 	if tx, err := ExtractTx(ctx); err == nil {
-		return ctx, nil, tx
+		return ctx, tx, nil
 	}
 
 	tx, err := db.BeginTx(ctx, opts)
 	if err != nil {
-		return nil, err, nil
+		return nil, nil, err
 	}
 
-	return context.WithValue(ctx, txInjector{}, tx), nil, tx
+	return context.WithValue(ctx, txInjector{}, tx), tx, nil
 }
