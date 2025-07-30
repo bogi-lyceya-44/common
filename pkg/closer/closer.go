@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"syscall"
 
 	"golang.org/x/sync/errgroup"
@@ -19,7 +20,7 @@ type closeFunc func() error
 type closer struct {
 	mu *sync.Mutex
 
-	closed bool
+	closed atomic.Bool
 
 	priorityByGroup map[string]int
 	groupCallbacks  map[string][]closeFunc
@@ -84,15 +85,9 @@ func AddCallback(groupName string, callback closeFunc) error {
 // It is called automatically when signal is received but it may be called manually.
 // Groups with the same priority are executed in parallel.
 func (c *closer) CloseAll() error {
-	c.mu.Lock()
-
-	if c.closed {
-		c.mu.Unlock()
+	if !c.closed.CompareAndSwap(false, true) {
 		return ErrAlreadyClosed
 	}
-
-	c.closed = true
-	c.mu.Unlock()
 
 	var allErrors []error
 
