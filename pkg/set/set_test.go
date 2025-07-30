@@ -3,7 +3,7 @@ package set_test
 import (
 	"testing"
 
-	"github.com/lyceumtech/common/pkg/set"
+	"github.com/bogi-lyceya-44/common/pkg/set"
 	"github.com/stretchr/testify/assert"
 )
 
