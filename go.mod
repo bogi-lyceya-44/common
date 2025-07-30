@@ -1,4 +1,4 @@
-module github.com/lyceumtech/common
+module github.com/bogi-lyceya-44/common
 
 go 1.24.5
 
