@@ -18,9 +18,10 @@ var globalCloser = newCloser(syscall.SIGINT, syscall.SIGTERM)
 type closeFunc func() error
 
 type closer struct {
-	mu *sync.Mutex
-
+	mu     *sync.Mutex
 	closed atomic.Bool
+
+	ch chan os.Signal
 
 	priorityByGroup map[string]int
 	groupCallbacks  map[string][]closeFunc
@@ -32,18 +33,21 @@ type Group struct {
 }
 
 func newCloser(signals ...os.Signal) *closer {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, signals...)
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, signals...)
 
 	closer := &closer{
 		mu:              &sync.Mutex{},
 		priorityByGroup: make(map[string]int),
 		groupCallbacks:  make(map[string][]closeFunc),
+		ch:              ch,
 	}
 
 	go func() {
+		defer signal.Stop(ch)
+
 		// wait for passed signals
-		<-c
+		<-ch
 
 		// if a signal was given, start closing groups in order
 		_ = closer.CloseAll()
@@ -52,9 +56,13 @@ func newCloser(signals ...os.Signal) *closer {
 	return closer
 }
 
+func AddSignals(signals ...os.Signal) {
+	signal.Notify(globalCloser.ch, signals...)
+}
+
 // AddGroups adds groups with given priority.
 // The lower the priority, the earlier the group of function will execute.
-func AddGroups(groups []Group) {
+func AddGroups(groups ...Group) {
 	globalCloser.mu.Lock()
 	defer globalCloser.mu.Unlock()
 
