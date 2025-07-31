@@ -171,28 +171,15 @@ func Values[T comparable, U any](items map[T]U) []U {
 // Extra elements will be discarded.
 //
 // Example: Zip([1, 2, 3, 4], [5, 6]) -> [{1, 5}, {2, 6}]
-func Zip[T, U any](l []T, r []U) []struct {
-	First  T
-	Second U
-} {
+func Zip[T, U any](l []T, r []U) []Pair[T, U] {
 	totalLength := min(len(l), len(r))
 
-	result := make(
-		[]struct {
-			First  T
-			Second U
-		},
-		0,
-		totalLength,
-	)
+	result := make([]Pair[T, U], 0, totalLength)
 
 	for i := range totalLength {
 		result = append(
 			result,
-			struct {
-				First  T
-				Second U
-			}{
+			Pair[T, U]{
 				First:  l[i],
 				Second: r[i],
 			},
@@ -200,4 +187,22 @@ func Zip[T, U any](l []T, r []U) []struct {
 	}
 
 	return result
+}
+
+// Reduce accumulates some value over the passed array.
+// JS analogue: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce
+//
+// Example: Reduce([1, 2, 3, 4], f(accumulator, x) -> accumulator + x, 0) -> 10
+func Reduce[T, U any](
+	arr []T,
+	reducer func(U, T) U,
+	initialValue U,
+) U {
+	accumulator := initialValue
+
+	for _, item := range arr {
+		accumulator = reducer(accumulator, item)
+	}
+
+	return accumulator
 }

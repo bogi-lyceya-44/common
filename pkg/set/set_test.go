@@ -8,6 +8,8 @@ import (
 )
 
 func TestEqual(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		lhs  set.Set[int]
@@ -39,6 +41,8 @@ func TestEqual(t *testing.T) {
 }
 
 func TestSubstitute(t *testing.T) {
+	t.Parallel()
+
 	lhs := set.New("abacaba", "babababa")
 	rhs := set.New("babababa", "aaaaaa")
 	want := set.New("abacaba")
