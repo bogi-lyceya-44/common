@@ -3,6 +3,7 @@ package transactor
 import (
 	"context"
 	"fmt"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -65,10 +66,12 @@ type impl struct {
 	db *pgxpool.Pool
 }
 
+// Do fn in transaction with default options
 func (i impl) WithTx(ctx context.Context, fn func(context.Context) error) error {
 	return i.WithTxOpts(ctx, fn, pgx.TxOptions{})
 }
 
+// Do fn in transaction with custom options
 func (i impl) WithTxOpts(ctx context.Context, fn func(context.Context) error, opts pgx.TxOptions) (txErr error) {
 	ctxWithTx, tx, err := injectTx(ctx, i.db, opts)
 	if err != nil {
@@ -104,6 +107,8 @@ func New(db *pgxpool.Pool) *impl {
 
 type txInjector struct{}
 
+// Extracting transaction from context
+// If transaction not found will return error
 func ExtractTx(ctx context.Context) (pgx.Tx, error) {
 	tx, ok := ctx.Value(txInjector{}).(pgx.Tx)
 	if !ok {
