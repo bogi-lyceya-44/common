@@ -79,7 +79,12 @@ func (w *WorkerPool[T]) work(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			flush(ctx)
-		case item := <-w.input:
+		case item, ok := <-w.input:
+			if !ok {
+				flush(context.Background())
+				return
+			}
+
 			ticker.Reset(w.flushTimeout)
 			batch = append(batch, item)
 
