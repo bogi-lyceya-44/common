@@ -3,10 +3,12 @@ package utils_test
 import (
 	"reflect"
 	"slices"
+	"strconv"
 	"testing"
 
 	"github.com/bogi-lyceya-44/common/pkg/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMap(t *testing.T) {
@@ -23,6 +25,46 @@ func TestMap(t *testing.T) {
 	)
 
 	assert.Equal(t, expected, got)
+}
+
+func TestMapWithError(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		have    []string
+		want    []int
+		wantErr bool
+	}{
+		{
+			name:    "correct strings",
+			have:    []string{"1", "2", "3"},
+			want:    []int{1, 2, 3},
+			wantErr: false,
+		},
+		{
+			name:    "incorrect strings",
+			have:    []string{"1", "asdfasdf", "aaa"},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(
+			tt.name,
+			func(t *testing.T) {
+				t.Parallel()
+
+				got, err := utils.MapWithError(tt.have, strconv.Atoi)
+				if err != nil {
+					require.True(t, tt.wantErr)
+				}
+
+				require.Equal(t, tt.want, got)
+			},
+		)
+	}
 }
 
 func TestGroupBy(t *testing.T) {
