@@ -14,6 +14,27 @@ func Map[T, U any](arr []T, f func(x T) U) []U {
 	return result
 }
 
+// MapWithError maps the array to another array
+// with elements that were converted by provided function.
+// If the provided function returns an error,
+// MapWithError returns nil array and this error as a result.
+//
+// Example: Map([1, 2, 3], f(x) -> x*2) -> [2, 4, 6]
+func MapWithError[T, U any](arr []T, f func(x T) (U, error)) ([]U, error) {
+	result := make([]U, 0, len(arr))
+
+	for _, x := range arr {
+		mapped, err := f(x)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, mapped)
+	}
+
+	return result, nil
+}
+
 // GroupBy groups the array by result of provided function.
 // The value by key contains ALL elements of the array
 // where the key is equal to the result of the provided function.
