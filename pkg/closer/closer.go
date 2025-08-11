@@ -21,7 +21,8 @@ type closer struct {
 	mu     *sync.Mutex
 	closed atomic.Bool
 
-	ch chan os.Signal
+	ch      chan os.Signal
+	errorCh chan error
 
 	priorityByGroup map[string]int
 	groupCallbacks  map[string][]closeFunc
@@ -36,11 +37,14 @@ func newCloser(signals ...os.Signal) *closer {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, signals...)
 
+	errorCh := make(chan error, 1)
+
 	closer := &closer{
 		mu:              &sync.Mutex{},
 		priorityByGroup: make(map[string]int),
 		groupCallbacks:  make(map[string][]closeFunc),
 		ch:              ch,
+		errorCh:         errorCh,
 	}
 
 	go func() {
@@ -50,7 +54,8 @@ func newCloser(signals ...os.Signal) *closer {
 		<-ch
 
 		// if a signal was given, start closing groups in order
-		_ = closer.CloseAll()
+		errorCh <- closer.CloseAll()
+		close(errorCh)
 	}()
 
 	return closer
@@ -133,4 +138,10 @@ func (c *closer) CloseAll() error {
 	}
 
 	return errors.Join(allErrors...)
+}
+
+// Wait waiting until all callbacks are executed
+// i.e the channel with the error receives a value
+func (c *closer) Wait() error {
+	return <-c.errorCh
 }
