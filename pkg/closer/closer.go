@@ -142,6 +142,6 @@ func (c *closer) CloseAll() error {
 
 // Wait waiting until all callbacks are executed
 // i.e the channel with the error receives a value
-func (c *closer) Wait() error {
-	return <-c.errorCh
+func Wait() error {
+	return <-globalCloser.errorCh
 }
